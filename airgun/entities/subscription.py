@@ -48,12 +48,13 @@ class SubscriptionEntity(BaseEntity):
         May be None if user can't verify reliably if manifest is
         uploaded or not due to missing permissions
         """
-        view = self.navigate_to(self, 'All')
+        view = self.navigate_to(self, 'Delete Manifest Confirmation')
+        view.wait_animation_end()
         try:
-            view.add_button.wait_displayed()
+            view.delete_button.wait_displayed()
         except TimedOutError:
             return None
-        return not view.add_button.disabled
+        return not view.delete_button.enabled
 
     def add_manifest(self, manifest_file, ignore_error_messages=None):
         """Upload manifest file
