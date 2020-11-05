@@ -15,8 +15,9 @@ from airgun.views.subscription import SubscriptionListView
 class SubscriptionEntity(BaseEntity):
     endpoint_path = '/subscriptions'
 
-    def _wait_for_process_to_finish(self, name, has_manifest=False, timeout=600,
-                                    ignore_error_messages=None):
+    def _wait_for_process_to_finish(
+        self, name, has_manifest=False, timeout=600, ignore_error_messages=None
+    ):
         """Helper ensuring that task (upload / delete manifest / subscription)
         has finished. Run after action invoking task to leave Satellite
         in usable state.
@@ -29,14 +30,16 @@ class SubscriptionEntity(BaseEntity):
         """
         view = SubscriptionListView(self.browser, logger=self.browser.logger)
         wait_for(
-                lambda: not view.progressbar.is_displayed,
-                handle_exception=True, timeout=timeout,
-                logger=view.progressbar.logger
+            lambda: not view.progressbar.is_displayed,
+            handle_exception=True,
+            timeout=timeout,
+            logger=view.progressbar.logger,
         )
         wait_for(
-                lambda: self.has_manifest == has_manifest,
-                handle_exception=True, timeout=10,
-                logger=view.logger
+            lambda: self.has_manifest == has_manifest,
+            handle_exception=True,
+            timeout=10,
+            logger=view.logger,
         )
         view.flash.assert_no_error(ignore_messages=ignore_error_messages)
         view.flash.dismiss()
@@ -65,7 +68,8 @@ class SubscriptionEntity(BaseEntity):
         view.wait_animation_end()
         view.manifest.manifest_file.fill(manifest_file)
         self._wait_for_process_to_finish(
-            'Import Manifest', has_manifest=True, ignore_error_messages=ignore_error_messages)
+            'Import Manifest', has_manifest=True, ignore_error_messages=ignore_error_messages
+        )
 
     def refresh_manifest(self):
         """Refresh manifest"""
@@ -74,9 +78,7 @@ class SubscriptionEntity(BaseEntity):
         view.manifest.refresh_button.click()
         org_name = view.taxonomies.current_org
         self._wait_for_process_to_finish(
-            'Refresh Manifest organization \'{}\''.format(org_name),
-            has_manifest=True,
-            timeout=1200
+            f'Refresh Manifest organization "{org_name}"', has_manifest=True, timeout=1200
         )
 
     def delete_manifest(self, ignore_error_messages=None):
@@ -85,7 +87,8 @@ class SubscriptionEntity(BaseEntity):
         view.wait_animation_end()
         view.delete_button.click()
         self._wait_for_process_to_finish(
-            'Delete Manifest', has_manifest=False, ignore_error_messages=ignore_error_messages)
+            'Delete Manifest', has_manifest=False, ignore_error_messages=ignore_error_messages
+        )
 
     def read_delete_manifest_message(self):
         """Read message displayed on 'Confirm delete manifest' dialog"""
@@ -108,8 +111,7 @@ class SubscriptionEntity(BaseEntity):
         for row in view.table.rows(subscription_name=entity_name):
             row['Quantity to Allocate'].fill(quantity)
         view.submit_button.click()
-        self._wait_for_process_to_finish(
-                'Bind entitlements to an allocation', has_manifest=True)
+        self._wait_for_process_to_finish('Bind entitlements to an allocation', has_manifest=True)
 
     def search(self, value):
         """search for subscription"""
@@ -129,7 +131,7 @@ class SubscriptionEntity(BaseEntity):
                 timeout=10,
                 delay=1,
                 handle_exception=True,
-                logger=view.logger
+                logger=view.logger,
             )
         return view.table.headers
 
@@ -168,8 +170,7 @@ class SubscriptionEntity(BaseEntity):
             row['Select all rows'].fill(True)
         view.delete_button.click()
         view.confirm_deletion.confirm()
-        self._wait_for_process_to_finish(
-                'Delete Upstream Subscription', has_manifest=True)
+        self._wait_for_process_to_finish('Delete Upstream Subscription', has_manifest=True)
 
 
 class SubscriptionNavigationStep(NavigateStep):
@@ -181,13 +182,14 @@ class SubscriptionNavigationStep(NavigateStep):
             timeout=30,
             delay=1,
             handle_exception=True,
-            logger=self.view.logger
+            logger=self.view.logger,
         )
 
 
 @navigator.register(SubscriptionEntity, 'All')
 class SubscriptionList(SubscriptionNavigationStep):
     """Navigate to Subscriptions main page"""
+
     VIEW = SubscriptionListView
 
     def step(self, *args, **kwargs):
@@ -197,6 +199,7 @@ class SubscriptionList(SubscriptionNavigationStep):
 @navigator.register(SubscriptionEntity, 'Manage Manifest')
 class ManageManifest(NavigateStep):
     """Navigate to 'Manage Manifest' dialog box on Subscriptions main page"""
+
     VIEW = ManageManifestView
 
     prerequisite = NavigateToSibling('All')
@@ -212,14 +215,17 @@ class DeleteManifestConfirmation(NavigateStep):
     Dialog box appearance is animated. wait_for ensures that we
     interact with content only after animation has finished
     """
+
     VIEW = DeleteManifestConfirmationView
 
     prerequisite = NavigateToSibling('Manage Manifest')
 
     def step(self, *args, **kwargs):
         wait_for(
-                lambda: not self.parent.manifest.delete_button.disabled,
-                handle_exception=True, logger=self.view.logger, timeout=10
+            lambda: not self.parent.manifest.delete_button.disabled,
+            handle_exception=True,
+            logger=self.view.logger,
+            timeout=10,
         )
         self.parent.manifest.delete_button.click()
 
@@ -227,13 +233,13 @@ class DeleteManifestConfirmation(NavigateStep):
 @navigator.register(SubscriptionEntity, 'Add')
 class AddSubscription(NavigateStep):
     """Navigate to Add Subscriptions page"""
+
     VIEW = AddSubscriptionView
 
     prerequisite = NavigateToSibling('All')
 
     def am_i_here(self, *args, **kwargs):
-        return (self.view.is_displayed
-                and self.view.breadcrumb.locations[1] == 'Add Subscriptions')
+        return self.view.is_displayed and self.view.breadcrumb.locations[1] == 'Add Subscriptions'
 
     def step(self, *args, **kwargs):
         self.parent.add_button.click()
@@ -247,6 +253,7 @@ class SubscriptionDetails(SubscriptionNavigationStep):
         entity_name: name of Subscription
         virt_who: Whether this is a virt who client subscription.
     """
+
     VIEW = SubscriptionDetailsView
 
     def prerequisite(self, *args, **kwargs):
@@ -255,8 +262,8 @@ class SubscriptionDetails(SubscriptionNavigationStep):
     def step(self, *args, **kwargs):
         subscription_name = kwargs.get('entity_name')
         virt_who = kwargs.get('virt_who')
-        search_string = 'name = "{0}"'.format(subscription_name)
+        search_string = f'name = "{subscription_name}"'
         if virt_who:
-            search_string = 'virt_who = true and {0}'.format(search_string)
+            search_string = f'virt_who = true and {search_string}'
         self.parent.search(search_string)
         self.parent.table.row(name=subscription_name)['Name'].widget.click()
