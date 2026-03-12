@@ -202,6 +202,7 @@ class RecommendationsTabEntity(BaseEntity):
         self.browser.plugin.ensure_page_safe(timeout='10s')
         return view.read()
 
+
     def read_no_authorized_message(self):
         view = self.navigate_to(self, 'All Recommendations')
         wait_for(lambda: view.no_authorized_header.is_displayed, timeout=30)
